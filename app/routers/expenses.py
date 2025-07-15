@@ -44,7 +44,7 @@ async def create_expense(expense_data: ExpenseCreate, current_user = Depends(get
             "user_id": user_id,
             "amount": float(expense_data.amount),
             "note": expense_data.note,
-            "date": expense_data.date.isoformat(),
+            "date": (expense_data.date or date.today()).isoformat(),
             "category_id": category_id
         }
         
