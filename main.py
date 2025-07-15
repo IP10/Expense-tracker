@@ -1,24 +1,21 @@
 from fastapi import FastAPI, HTTPException, Depends, status
 from fastapi.middleware.cors import CORSMiddleware
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
-from contextlib import asynccontextmanager
 import uvicorn
 
 from app.auth import verify_token
 from app.routers import auth, expenses, reports, categories
 from app.database import init_db
 
-@asynccontextmanager
-async def lifespan(app: FastAPI):
-    await init_db()
-    yield
-
 app = FastAPI(
     title="Expense Tracker API",
     description="A comprehensive expense tracking API with AI-powered categorization",
-    version="1.0.0",
-    lifespan=lifespan
+    version="1.0.0"
 )
+
+@app.on_event("startup")
+async def startup_event():
+    await init_db()
 
 app.add_middleware(
     CORSMiddleware,

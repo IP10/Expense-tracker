@@ -109,17 +109,14 @@ class ExpenseCategorizer:
 
             Category:"""
             
-            response = self.anthropic_client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=10,
+            response = self.anthropic_client.completions.create(
+                model="claude-2",
+                max_tokens_to_sample=10,
                 temperature=0.1,
-                messages=[{
-                    "role": "user", 
-                    "content": prompt
-                }]
+                prompt=f"\n\nHuman: {prompt}\n\nAssistant:"
             )
             
-            category = response.content[0].text.strip()
+            category = response.completion.strip()
             
             # Validate the response is in available categories
             if category in available_categories:
@@ -234,18 +231,15 @@ class ExpenseCategorizer:
             Shopping:10
             Other:5"""
             
-            response = self.anthropic_client.messages.create(
-                model="claude-3-sonnet-20240229",
-                max_tokens=50,
+            response = self.anthropic_client.completions.create(
+                model="claude-2",
+                max_tokens_to_sample=50,
                 temperature=0.2,
-                messages=[{
-                    "role": "user",
-                    "content": prompt
-                }]
+                prompt=f"\n\nHuman: {prompt}\n\nAssistant:"
             )
             
             suggestions = []
-            lines = response.content[0].text.strip().split('\n')
+            lines = response.completion.strip().split('\n')
             
             for line in lines[:3]:  # Top 3 only
                 if ':' in line:

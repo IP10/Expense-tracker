@@ -7,9 +7,9 @@ async def init_db():
     """Initialize database tables if they don't exist"""
     try:
         # Check if tables exist by trying to select from them
-        await supabase.table('users').select('id').limit(1).execute()
-        await supabase.table('categories').select('id').limit(1).execute()
-        await supabase.table('expenses').select('id').limit(1).execute()
+        supabase.table('users').select('id').limit(1).execute()
+        supabase.table('categories').select('id').limit(1).execute()
+        supabase.table('expenses').select('id').limit(1).execute()
         print("✅ Database tables verified")
     except Exception as e:
         print(f"⚠️  Database initialization error: {e}")
