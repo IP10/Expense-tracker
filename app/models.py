@@ -1,4 +1,4 @@
-from pydantic import BaseModel, Field, field_validator
+from pydantic import BaseModel, Field, validator
 from typing import Optional, List
 from datetime import datetime, date
 from decimal import Decimal
@@ -31,8 +31,7 @@ class ExpenseCreate(BaseModel):
     date: date = Field(default_factory=date.today, description="Expense date")
     category_id: Optional[str] = Field(None, description="Manual category override")
 
-    @field_validator('amount')
-    @classmethod
+    @validator('amount')
     def validate_amount(cls, v):
         if v <= 0:
             raise ValueError('Amount must be positive')
@@ -40,8 +39,7 @@ class ExpenseCreate(BaseModel):
             raise ValueError('Amount cannot exceed ₹1,00,00,000')
         return round(v, 2)
 
-    @field_validator('note')
-    @classmethod
+    @validator('note')
     def validate_note(cls, v):
         if not v.strip():
             raise ValueError('Note cannot be empty')
@@ -53,8 +51,7 @@ class ExpenseUpdate(BaseModel):
     date: Optional[date] = None
     category_id: Optional[str] = None
 
-    @field_validator('amount')
-    @classmethod
+    @validator('amount')
     def validate_amount(cls, v):
         if v is not None:
             if v <= 0:
@@ -80,8 +77,7 @@ class CategoryCreate(BaseModel):
     emoji: Optional[str] = Field(None, description="Category emoji")
     is_system: bool = Field(default=False, description="System-defined category")
 
-    @field_validator('name')
-    @classmethod
+    @validator('name')
     def validate_name(cls, v):
         return v.strip().title()
 
@@ -102,10 +98,9 @@ class ReportRequest(BaseModel):
     start_date: date
     end_date: date
 
-    @field_validator('end_date')
-    @classmethod
-    def validate_date_range(cls, v, info):
-        if info.data.get('start_date') and v < info.data['start_date']:
+    @validator('end_date')
+    def validate_date_range(cls, v, values):
+        if 'start_date' in values and v < values['start_date']:
             raise ValueError('End date must be after start date')
         return v
 
