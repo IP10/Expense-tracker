@@ -4,7 +4,8 @@ pydantic==2.5.0
 python-multipart==0.0.6
 supabase==2.3.4
 PyJWT==2.8.0
-passlib[bcrypt]==1.7.4
+passlib==1.7.4
+bcrypt==4.0.1
 python-decouple==3.8
 anthropic==0.7.8
 httpx==0.25.2
