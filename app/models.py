@@ -28,7 +28,7 @@ class User(BaseModel):
 class ExpenseCreate(BaseModel):
     amount: Decimal = Field(..., gt=0, description="Expense amount in INR (must be positive)")
     note: str = Field(..., max_length=500, description="Expense description/note")
-    date: date = Field(default_factory=date.today, description="Expense date")
+    date: date = Field(default_factory=lambda: date.today(), description="Expense date")
     category_id: Optional[str] = Field(None, description="Manual category override")
 
     @validator('amount')
