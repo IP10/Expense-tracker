@@ -1,12 +1,12 @@
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, validator
 from typing import Optional, List
 from datetime import datetime, date
 from decimal import Decimal
 
 class UserRegister(BaseModel):
-    email: str = Field(..., description="User email address")
-    password: str = Field(..., min_length=8, description="User password (min 8 characters)")
-    full_name: str = Field(..., min_length=2, description="User full name")
+    email: str
+    password: str
+    full_name: str
 
 class UserLogin(BaseModel):
     email: str
@@ -26,10 +26,10 @@ class User(BaseModel):
     updated_at: datetime
 
 class ExpenseCreate(BaseModel):
-    amount: Decimal = Field(..., gt=0, description="Expense amount in INR (must be positive)")
-    note: str = Field(..., max_length=500, description="Expense description/note")
-    date: Optional[date] = Field(None, description="Expense date")
-    category_id: Optional[str] = Field(None, description="Manual category override")
+    amount: Decimal
+    note: str
+    date: Optional[date] = None
+    category_id: Optional[str] = None
 
     @validator('amount')
     def validate_amount(cls, v):
@@ -46,8 +46,8 @@ class ExpenseCreate(BaseModel):
         return v.strip()
 
 class ExpenseUpdate(BaseModel):
-    amount: Optional[Decimal] = Field(None, gt=0)
-    note: Optional[str] = Field(None, max_length=500)
+    amount: Optional[Decimal] = None
+    note: Optional[str] = None
     date: Optional[date] = None
     category_id: Optional[str] = None
 
@@ -73,16 +73,16 @@ class Expense(BaseModel):
     updated_at: datetime
 
 class CategoryCreate(BaseModel):
-    name: str = Field(..., min_length=1, max_length=50)
-    emoji: Optional[str] = Field(None, description="Category emoji")
-    is_system: bool = Field(default=False, description="System-defined category")
+    name: str
+    emoji: Optional[str] = None
+    is_system: bool = False
 
     @validator('name')
     def validate_name(cls, v):
         return v.strip().title()
 
 class CategoryUpdate(BaseModel):
-    name: Optional[str] = Field(None, min_length=1, max_length=50)
+    name: Optional[str] = None
     emoji: Optional[str] = None
 
 class Category(BaseModel):
