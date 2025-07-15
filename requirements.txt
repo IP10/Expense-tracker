@@ -8,6 +8,6 @@ passlib==1.7.4
 bcrypt==4.0.1
 python-decouple==3.8
 anthropic==0.7.8
-httpx==0.25.0
+httpx>=0.24.0,<0.25.0
 pytest==7.4.0
 pytest-asyncio==0.21.0
