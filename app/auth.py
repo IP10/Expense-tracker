@@ -1,5 +1,6 @@
 from datetime import datetime, timedelta
-from jose import JWTError, jwt
+import jwt
+from jwt.exceptions import PyJWTError
 from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
@@ -49,7 +50,7 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
-    except JWTError:
+    except PyJWTError:
         raise credentials_exception
     
     # Verify user exists

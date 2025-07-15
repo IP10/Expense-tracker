@@ -103,7 +103,8 @@ async def login(user_credentials: UserLogin):
 async def refresh_token(refresh_token: str):
     """Refresh access token using refresh token"""
     try:
-        from jose import jwt, JWTError
+        import jwt
+        from jwt.exceptions import PyJWTError
         
         payload = jwt.decode(
             refresh_token, 
@@ -137,7 +138,7 @@ async def refresh_token(refresh_token: str):
             "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
         }
         
-    except JWTError:
+    except PyJWTError:
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token"
