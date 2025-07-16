@@ -93,19 +93,24 @@ class ExpenseCategorizer:
                 return user_categories[claude_category]
             
             # Fallback to keyword matching
+            print(f"Claude failed, using keyword fallback for: '{note}'")
             fallback_category = self._categorize_with_keywords(note, user_categories)
+            print(f"Keyword fallback result: {fallback_category}")
             return fallback_category
             
         except Exception as e:
             print(f"Error in categorization: {e}")
+            print(f"Error details - Note: '{note}', User ID: {user_id}")
             # Final fallback to keyword matching
             try:
                 categories_result = supabase.table('categories').select('*').eq('user_id', user_id).execute()
                 if categories_result.data:
                     user_categories = {cat['name']: cat['id'] for cat in categories_result.data}
-                    return self._categorize_with_keywords(note, user_categories)
-            except:
-                pass
+                    fallback_result = self._categorize_with_keywords(note, user_categories)
+                    print(f"Fallback categorization result: {fallback_result}")
+                    return fallback_result
+            except Exception as fallback_error:
+                print(f"Fallback categorization also failed: {fallback_error}")
             return None
     
     def _categorize_with_claude(self, note: str, available_categories: List[str]) -> Optional[str]:
@@ -128,14 +133,14 @@ class ExpenseCategorizer:
 
             Category:"""
             
-            response = self.anthropic_client.completions.create(
-                model="claude-2",
-                max_tokens_to_sample=10,
+            response = self.anthropic_client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=10,
                 temperature=0.1,
-                prompt=f"\n\nHuman: {prompt}\n\nAssistant:"
+                messages=[{"role": "user", "content": prompt}]
             )
             
-            category = response.completion.strip()
+            category = response.content[0].text.strip()
             
             # Validate the response is in available categories
             if category in available_categories:
@@ -151,6 +156,8 @@ class ExpenseCategorizer:
             
         except Exception as e:
             print(f"Claude categorization failed: {e}")
+            # Log the specific error for debugging
+            print(f"Error details - Note: '{note}', Available categories: {available_categories}")
             return None
     
     def _categorize_with_keywords(self, note: str, user_categories: Dict[str, str]) -> Optional[str]:
@@ -160,17 +167,25 @@ class ExpenseCategorizer:
         clean_note = self._clean_text(note)
         category_scores = {}
         
+        print(f"Keyword matching for: '{note}' -> cleaned: '{clean_note}'")
+        
         for category_name, category_id in user_categories.items():
             score = self._calculate_category_score(clean_note, category_name)
             if score > 0:
                 category_scores[category_id] = score
+                print(f"  {category_name}: {score}")
+        
+        print(f"All scores: {category_scores}")
         
         if category_scores:
             best_category = max(category_scores.items(), key=lambda x: x[1])
+            print(f"Best category ID: {best_category[0]} (score: {best_category[1]})")
             return best_category[0]
         
         # Default to "Other" category
-        return user_categories.get("Other")
+        other_id = user_categories.get("Other")
+        print(f"No matches found, defaulting to Other (ID: {other_id})")
+        return other_id
     
     def _clean_text(self, text: str) -> str:
         """Clean and normalize text for better matching"""
@@ -251,15 +266,15 @@ class ExpenseCategorizer:
             Food:10
             Other:5"""
             
-            response = self.anthropic_client.completions.create(
-                model="claude-2",
-                max_tokens_to_sample=50,
+            response = self.anthropic_client.messages.create(
+                model="claude-3-sonnet-20240229",
+                max_tokens=50,
                 temperature=0.2,
-                prompt=f"\n\nHuman: {prompt}\n\nAssistant:"
+                messages=[{"role": "user", "content": prompt}]
             )
             
             suggestions = []
-            lines = response.completion.strip().split('\n')
+            lines = response.content[0].text.strip().split('\n')
             
             for line in lines[:3]:  # Top 3 only
                 if ':' in line:
@@ -279,6 +294,7 @@ class ExpenseCategorizer:
             
         except Exception as e:
             print(f"Claude suggestions failed: {e}")
+            print(f"Suggestions error details - Note: '{note}'")
             # Fallback to keyword-based suggestions
             return self.get_category_suggestions(note)
 
