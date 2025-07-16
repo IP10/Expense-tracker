@@ -44,6 +44,18 @@ class ExpenseCreate(BaseModel):
         if not v.strip():
             raise ValueError('Note cannot be empty')
         return v.strip()
+    
+    @validator('date', pre=True)
+    def validate_date(cls, v):
+        if v is None or v == "":
+            return None
+        if isinstance(v, str):
+            try:
+                # Try to parse ISO format date string
+                return datetime.strptime(v, '%Y-%m-%d').date()
+            except ValueError:
+                raise ValueError('Date must be in YYYY-MM-DD format')
+        return v
 
 class ExpenseUpdate(BaseModel):
     amount: Optional[Decimal] = None
@@ -59,6 +71,18 @@ class ExpenseUpdate(BaseModel):
             if v > Decimal('10000000'):
                 raise ValueError('Amount cannot exceed ₹1,00,00,000')
             return round(v, 2)
+        return v
+    
+    @validator('date', pre=True)
+    def validate_date(cls, v):
+        if v is None or v == "":
+            return None
+        if isinstance(v, str):
+            try:
+                # Try to parse ISO format date string
+                return datetime.strptime(v, '%Y-%m-%d').date()
+            except ValueError:
+                raise ValueError('Date must be in YYYY-MM-DD format')
         return v
 
 class Expense(BaseModel):

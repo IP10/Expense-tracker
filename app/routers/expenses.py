@@ -15,6 +15,12 @@ async def create_expense(expense_data: ExpenseCreate, current_user = Depends(get
     try:
         user_id = current_user['id']
         
+        print(f"💰 Backend received expense data:")
+        print(f"   - amount: {expense_data.amount}")
+        print(f"   - note: '{expense_data.note}'")
+        print(f"   - date: {expense_data.date} (type: {type(expense_data.date)})")
+        print(f"   - category_id: {expense_data.category_id}")
+        
         # Auto-categorize if no category provided
         category_id = expense_data.category_id
         print(f"🔍 Expense creation - Initial category_id: {category_id}")
