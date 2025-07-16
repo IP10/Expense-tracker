@@ -1,8 +1,20 @@
 import re
+import logging
 from typing import Dict, List, Optional
 from openai import OpenAI
 from app.database import supabase
 from app.config import settings
+
+# Configure logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Configure a handler (e.g., StreamHandler for console output)
+handler = logging.StreamHandler()
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+if not logger.handlers:
+    logger.addHandler(handler)
 
 class ExpenseCategorizer:
     def __init__(self):
@@ -88,37 +100,37 @@ class ExpenseCategorizer:
             category_names = list(user_categories.keys())
             
             # Try OpenAI categorization first
-            print(f"🤖 Attempting OpenAI categorization for: '{note}'")
-            print(f"📋 Available categories: {category_names}")
+            logger.info(f"🤖 Attempting OpenAI categorization for: '{note}'")
+            logger.info(f"📋 Available categories: {category_names}")
             openai_category = self._categorize_with_openai(note, category_names)
-            print(f"🎯 OpenAI returned category: '{openai_category}'")
+            logger.info(f"🎯 OpenAI returned category: '{openai_category}'")
             
             if openai_category and openai_category in user_categories:
                 category_id = user_categories[openai_category]
-                print(f"✅ OpenAI categorization successful: '{openai_category}' -> ID: {category_id}")
+                logger.info(f"✅ OpenAI categorization successful: '{openai_category}' -> ID: {category_id}")
                 return category_id
             else:
-                print(f"❌ OpenAI category '{openai_category}' not found in user categories: {list(user_categories.keys())}")
+                logger.warning(f"❌ OpenAI category '{openai_category}' not found in user categories: {list(user_categories.keys())}")
             
             # Fallback to keyword matching
-            print(f"OpenAI failed, using keyword fallback for: '{note}'")
+            logger.info(f"OpenAI failed, using keyword fallback for: '{note}'")
             fallback_category = self._categorize_with_keywords(note, user_categories)
-            print(f"Keyword fallback result: {fallback_category}")
+            logger.info(f"Keyword fallback result: {fallback_category}")
             return fallback_category
             
         except Exception as e:
-            print(f"Error in categorization: {e}")
-            print(f"Error details - Note: '{note}', User ID: {user_id}")
+            logger.error(f"Error in categorization: {e}")
+            logger.error(f"Error details - Note: '{note}', User ID: {user_id}")
             # Final fallback to keyword matching
             try:
                 categories_result = supabase.table('categories').select('*').eq('user_id', user_id).execute()
                 if categories_result.data:
                     user_categories = {cat['name']: cat['id'] for cat in categories_result.data}
                     fallback_result = self._categorize_with_keywords(note, user_categories)
-                    print(f"Fallback categorization result: {fallback_result}")
+                    logger.info(f"Fallback categorization result: {fallback_result}")
                     return fallback_result
             except Exception as fallback_error:
-                print(f"Fallback categorization also failed: {fallback_error}")
+                logger.error(f"Fallback categorization also failed: {fallback_error}")
             return None
     
     def _categorize_with_openai(self, note: str, available_categories: List[str]) -> Optional[str]:
@@ -143,7 +155,7 @@ class ExpenseCategorizer:
 
             Category:"""
             
-            print(f"🔤 Sending to OpenAI with prompt: {prompt[:200]}...")
+            logger.info(f"🔤 Sending to OpenAI with prompt: {prompt[:200]}...")
             response = self.openai_client.chat.completions.create(
                 model="gpt-4o-mini",
                 messages=[{"role": "user", "content": prompt}],
@@ -152,29 +164,29 @@ class ExpenseCategorizer:
             )
             
             category = response.choices[0].message.content.strip()
-            print(f"🤖 OpenAI raw response: '{category}'")
-            print(f"🔍 Checking if '{category}' is in available categories: {available_categories}")
+            logger.info(f"🤖 OpenAI raw response: '{category}'")
+            logger.info(f"🔍 Checking if '{category}' is in available categories: {available_categories}")
             
             # Validate the response is in available categories
             if category in available_categories:
-                print(f"✅ Exact match found: '{category}'")
+                logger.info(f"✅ Exact match found: '{category}'")
                 return category
             
             # Try case-insensitive matching
             category_lower = category.lower()
-            print(f"🔄 Trying case-insensitive matching for: '{category_lower}'")
+            logger.info(f"🔄 Trying case-insensitive matching for: '{category_lower}'")
             for cat in available_categories:
                 if cat.lower() == category_lower:
-                    print(f"✅ Case-insensitive match found: '{category}' -> '{cat}'")
+                    logger.info(f"✅ Case-insensitive match found: '{category}' -> '{cat}'")
                     return cat
             
-            print(f"❌ No match found for '{category}' in available categories")
+            logger.warning(f"❌ No match found for '{category}' in available categories")
             return None
             
         except Exception as e:
-            print(f"OpenAI categorization failed: {e}")
+            logger.error(f"OpenAI categorization failed: {e}")
             # Log the specific error for debugging
-            print(f"Error details - Note: '{note}', Available categories: {available_categories}")
+            logger.error(f"Error details - Note: '{note}', Available categories: {available_categories}")
             return None
     
     def _categorize_with_keywords(self, note: str, user_categories: Dict[str, str]) -> Optional[str]:
@@ -184,24 +196,24 @@ class ExpenseCategorizer:
         clean_note = self._clean_text(note)
         category_scores = {}
         
-        print(f"Keyword matching for: '{note}' -> cleaned: '{clean_note}'")
+        logger.info(f"Keyword matching for: '{note}' -> cleaned: '{clean_note}'")
         
         for category_name, category_id in user_categories.items():
             score = self._calculate_category_score(clean_note, category_name)
             if score > 0:
                 category_scores[category_id] = score
-                print(f"  {category_name}: {score}")
+                logger.info(f"  {category_name}: {score}")
         
-        print(f"All scores: {category_scores}")
+        logger.info(f"All scores: {category_scores}")
         
         if category_scores:
             best_category = max(category_scores.items(), key=lambda x: x[1])
-            print(f"Best category ID: {best_category[0]} (score: {best_category[1]})")
+            logger.info(f"Best category ID: {best_category[0]} (score: {best_category[1]})")
             return best_category[0]
         
         # Default to "Other" category
         other_id = user_categories.get("Other")
-        print(f"No matches found, defaulting to Other (ID: {other_id})")
+        logger.info(f"No matches found, defaulting to Other (ID: {other_id})")
         return other_id
     
     def _clean_text(self, text: str) -> str:
@@ -310,8 +322,8 @@ class ExpenseCategorizer:
             return suggestions if suggestions else self.get_category_suggestions(note)
             
         except Exception as e:
-            print(f"OpenAI suggestions failed: {e}")
-            print(f"Suggestions error details - Note: '{note}'")
+            logger.error(f"OpenAI suggestions failed: {e}")
+            logger.error(f"Suggestions error details - Note: '{note}'")
             # Fallback to keyword-based suggestions
             return self.get_category_suggestions(note)
 

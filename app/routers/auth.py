@@ -1,9 +1,21 @@
 from fastapi import APIRouter, HTTPException, status, Depends
 from datetime import timedelta
+import logging
 from app.models import UserRegister, UserLogin, Token, User
 from app.auth import verify_password, get_password_hash, create_access_token, create_refresh_token, get_current_user
 from app.database import supabase
 from app.config import settings
+
+# Configure logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Configure a handler (e.g., StreamHandler for console output)
+handler = logging.StreamHandler()
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+if not logger.handlers:
+    logger.addHandler(handler)
 
 router = APIRouter()
 
@@ -53,7 +65,7 @@ async def register(user_data: UserRegister):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Registration error: {str(e)}")
+        logger.error(f"❌ Registration error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Registration failed: {str(e)}"
@@ -95,7 +107,7 @@ async def login(user_credentials: UserLogin):
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Login error: {str(e)}")
+        logger.error(f"❌ Login error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Login failed: {str(e)}"
@@ -141,13 +153,13 @@ async def refresh_token(refresh_token: str):
         }
         
     except PyJWTError as e:
-        print(f"❌ JWT error in token refresh: {str(e)}")
+        logger.error(f"❌ JWT error in token refresh: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token"
         )
     except Exception as e:
-        print(f"❌ Token refresh error: {str(e)}")
+        logger.error(f"❌ Token refresh error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Token refresh failed: {str(e)}"
@@ -165,7 +177,7 @@ async def get_current_user_info(current_user = Depends(get_current_user)):
             "updated_at": current_user['updated_at']
         }
     except Exception as e:
-        print(f"❌ Get current user error: {str(e)}")
+        logger.error(f"❌ Get current user error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get user information: {str(e)}"
@@ -187,4 +199,4 @@ async def create_user_categories(user_id: str):
     try:
         supabase.table('categories').insert(default_categories).execute()
     except Exception as e:
-        print(f"Warning: Failed to create default categories: {e}")
+        logger.warning(f"Warning: Failed to create default categories: {e}")

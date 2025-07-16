@@ -2,10 +2,22 @@ from fastapi import APIRouter, HTTPException, status, Depends, Query, Request
 from typing import List, Optional
 from datetime import date, datetime
 from decimal import Decimal
+import logging
 from app.models import ExpenseCreate, ExpenseUpdate, Expense
 from app.auth import get_current_user
 from app.database import supabase
 from app.ai_categorizer import categorizer
+
+# Configure logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Configure a handler (e.g., StreamHandler for console output)
+handler = logging.StreamHandler()
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+if not logger.handlers:
+    logger.addHandler(handler)
 
 router = APIRouter()
 
@@ -15,41 +27,41 @@ async def create_expense(request: Request, expense_data: ExpenseCreate, current_
     try:
         # Log raw request body first
         body = await request.body()
-        print(f"🔍 Raw request body: {body.decode()}")
+        logger.info(f"🔍 Raw request body: {body.decode()}")
         
         user_id = current_user['id']
         
-        print(f"💰 Backend received expense data:")
-        print(f"   - amount: {expense_data.amount}")
-        print(f"   - note: '{expense_data.note}'")
-        print(f"   - date: {expense_data.date} (type: {type(expense_data.date)})")
-        print(f"   - category_id: {expense_data.category_id}")
+        logger.info(f"💰 Backend received expense data:")
+        logger.info(f"   - amount: {expense_data.amount}")
+        logger.info(f"   - note: '{expense_data.note}'")
+        logger.info(f"   - date: {expense_data.date} (type: {type(expense_data.date)})")
+        logger.info(f"   - category_id: {expense_data.category_id}")
         
         # Auto-categorize if no category provided
         category_id = expense_data.category_id
-        print(f"🔍 Expense creation - Initial category_id: {category_id}")
-        print(f"🔍 Expense note: '{expense_data.note}'")
+        logger.info(f"🔍 Expense creation - Initial category_id: {category_id}")
+        logger.info(f"🔍 Expense note: '{expense_data.note}'")
         
         if not category_id:
-            print(f"🤖 Starting AI categorization for note: '{expense_data.note}'")
+            logger.info(f"🤖 Starting AI categorization for note: '{expense_data.note}'")
             category_id = categorizer.categorize_expense(expense_data.note, user_id)
-            print(f"🎯 AI categorization result: {category_id}")
+            logger.info(f"🎯 AI categorization result: {category_id}")
             
             if not category_id:
-                print("⚠️ AI categorization failed, falling back to 'Other' category")
+                logger.warning("⚠️ AI categorization failed, falling back to 'Other' category")
                 # Fallback to "Other" category
                 other_cat = supabase.table('categories').select('id').eq('user_id', user_id).eq('name', 'Other').execute()
                 if other_cat.data:
                     category_id = other_cat.data[0]['id']
-                    print(f"✅ Using 'Other' category: {category_id}")
+                    logger.info(f"✅ Using 'Other' category: {category_id}")
                 else:
-                    print("❌ No 'Other' category found!")
+                    logger.error("❌ No 'Other' category found!")
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="No suitable category found and no Other category exists"
                     )
             else:
-                print(f"✅ AI categorization successful: {category_id}")
+                logger.info(f"✅ AI categorization successful: {category_id}")
         
         # Verify category belongs to user
         cat_result = supabase.table('categories').select('*').eq('id', category_id).eq('user_id', user_id).execute()
@@ -67,7 +79,7 @@ async def create_expense(request: Request, expense_data: ExpenseCreate, current_
             "date": (expense_data.date or date.today()).isoformat(),
             "category_id": category_id
         }
-        print(expense_dict)
+        logger.info(f"💾 Inserting expense dict: {expense_dict}")
         result = supabase.table('expenses').insert(expense_dict).execute()
         
         if not result.data:
@@ -91,19 +103,19 @@ async def create_expense(request: Request, expense_data: ExpenseCreate, current_
             "updated_at": datetime.fromisoformat(expense['updated_at'].replace('Z', '+00:00'))
         }
         
-        print(f"📤 Expense created successfully:")
-        print(f"   - ID: {response_data['id']}")
-        print(f"   - Note: '{response_data['note']}'")
-        print(f"   - Category ID: {response_data['category_id']}")
-        print(f"   - Category Name: {response_data['category_name']}")
-        print(f"   - Amount: {response_data['amount']}")
+        logger.info(f"📤 Expense created successfully:")
+        logger.info(f"   - ID: {response_data['id']}")
+        logger.info(f"   - Note: '{response_data['note']}'")
+        logger.info(f"   - Category ID: {response_data['category_id']}")
+        logger.info(f"   - Category Name: {response_data['category_name']}")
+        logger.info(f"   - Amount: {response_data['amount']}")
         
         return response_data
         
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Create expense error: {str(e)}")
+        logger.error(f"❌ Create expense error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create expense: {str(e)}"
@@ -161,7 +173,7 @@ async def get_expenses(
         return expenses
         
     except Exception as e:
-        print(f"❌ Get expenses error: {str(e)}")
+        logger.error(f"❌ Get expenses error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch expenses: {str(e)}"
@@ -200,7 +212,7 @@ async def get_expense(expense_id: str, current_user = Depends(get_current_user))
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Get expense error: {str(e)}")
+        logger.error(f"❌ Get expense error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch expense: {str(e)}"
@@ -286,7 +298,7 @@ async def update_expense(
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Update expense error: {str(e)}")
+        logger.error(f"❌ Update expense error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update expense: {str(e)}"
@@ -318,7 +330,7 @@ async def delete_expense(expense_id: str, current_user = Depends(get_current_use
     except HTTPException:
         raise
     except Exception as e:
-        print(f"❌ Delete expense error: {str(e)}")
+        logger.error(f"❌ Delete expense error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete expense: {str(e)}"
@@ -329,15 +341,15 @@ async def preview_categorization(note: str, current_user = Depends(get_current_u
     """Preview expense categorization for a given note using Claude AI"""
     try:
         user_id = current_user['id']
-        print(f"🔍 Preview categorization request for note: '{note}' from user: {user_id}")
+        logger.info(f"🔍 Preview categorization request for note: '{note}' from user: {user_id}")
         category_id = categorizer.categorize_expense(note, user_id)
-        print(f"🎯 Preview categorization result: {category_id}")
+        logger.info(f"🎯 Preview categorization result: {category_id}")
         
         if category_id:
             cat_result = supabase.table('categories').select('name, emoji').eq('id', category_id).execute()
             if cat_result.data:
                 category = cat_result.data[0]
-                print(f"🔍 Preview categorization: {category['name']} ({category_id})")
+                logger.info(f"🔍 Preview categorization: {category['name']} ({category_id})")
                 return {
                     "category_id": category_id,
                     "category_name": category['name'],
@@ -355,7 +367,7 @@ async def preview_categorization(note: str, current_user = Depends(get_current_u
         }
         
     except Exception as e:
-        print(f"❌ Preview categorization error: {str(e)}")
+        logger.error(f"❌ Preview categorization error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to preview categorization: {str(e)}"

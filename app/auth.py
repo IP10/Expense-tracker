@@ -1,11 +1,23 @@
 from datetime import datetime, timedelta
 import jwt
+import logging
 from jwt.exceptions import PyJWTError
 from passlib.context import CryptContext
 from fastapi import HTTPException, status, Depends
 from fastapi.security import HTTPBearer, HTTPAuthorizationCredentials
 from app.config import settings
 from app.database import supabase
+
+# Configure logger
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+# Configure a handler (e.g., StreamHandler for console output)
+handler = logging.StreamHandler()
+formatter = logging.Formatter("%(asctime)s - %(name)s - %(levelname)s - %(message)s")
+handler.setFormatter(formatter)
+if not logger.handlers:
+    logger.addHandler(handler)
 
 pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 security = HTTPBearer()
@@ -51,18 +63,18 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
         if user_id is None:
             raise credentials_exception
     except PyJWTError as e:
-        print(f"❌ JWT verification error: {str(e)}")
+        logger.error(f"❌ JWT verification error: {str(e)}")
         raise credentials_exception
     
     # Verify user exists
     try:
         result = supabase.table('users').select('*').eq('id', user_id).execute()
         if not result.data:
-            print(f"❌ User not found in database: {user_id}")
+            logger.error(f"❌ User not found in database: {user_id}")
             raise credentials_exception
         return result.data[0]
     except Exception as e:
-        print(f"❌ Database error in user verification: {str(e)}")
+        logger.error(f"❌ Database error in user verification: {str(e)}")
         raise credentials_exception
 
 async def get_current_user(user = Depends(verify_token)):
