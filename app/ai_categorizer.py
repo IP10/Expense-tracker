@@ -138,7 +138,6 @@ class ExpenseCategorizer:
             response = self.openai_client.chat.completions.create(
                 model="o4-mini",
                 messages=[{"role": "user", "content": prompt}],
-                max_tokens=10,
                 temperature=0.1
             )
             
