@@ -305,7 +305,7 @@ async def preview_categorization(note: str, current_user = Depends(get_current_u
                     "category_id": category_id,
                     "category_name": category['name'],
                     "emoji": category.get('emoji'),
-                    "suggestions": categorizer.get_category_suggestions_with_claude(note),
+                    "suggestions": categorizer.get_category_suggestions_with_openai(note),
                     "ai_powered": True
                 }
         
@@ -313,7 +313,7 @@ async def preview_categorization(note: str, current_user = Depends(get_current_u
             "category_id": None,
             "category_name": "Other",
             "emoji": "📝",
-            "suggestions": categorizer.get_category_suggestions_with_claude(note),
+            "suggestions": categorizer.get_category_suggestions_with_openai(note),
             "ai_powered": True
         }
         

@@ -7,6 +7,7 @@ class Settings:
     JWT_SECRET: str = config("JWT_SECRET")
     JWT_ALGORITHM: str = config("JWT_ALGORITHM", default="HS256")
     ANTHROPIC_API_KEY: str = config("ANTHROPIC_API_KEY")
+    OPENAI_API_KEY: str = config("ANTHROPIC_API_KEY")  # Using same key as requested
     
     ACCESS_TOKEN_EXPIRE_MINUTES: int = 30
     REFRESH_TOKEN_EXPIRE_DAYS: int = 7

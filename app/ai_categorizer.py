@@ -6,7 +6,7 @@ from app.config import settings
 
 class ExpenseCategorizer:
     def __init__(self):
-        self.openai_client = OpenAI(api_key=settings.ANTHROPIC_API_KEY)
+        self.openai_client = OpenAI(api_key=settings.OPENAI_API_KEY)
         
         self.category_keywords = {
             "Food": [
