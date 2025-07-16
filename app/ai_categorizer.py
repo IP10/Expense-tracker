@@ -11,10 +11,29 @@ class ExpenseCategorizer:
         self.category_keywords = {
             "Food": [
                 "food", "meal", "lunch", "dinner", "breakfast", "snack", "restaurant", "cafe", "coffee",
-                "pizza", "burger", "sandwich", "grocery", "vegetables", "fruits", "milk", "bread",
+                "pizza", "burger", "sandwich", "vegetables", "fruits", "milk", "bread",
                 "rice", "dal", "curry", "biryani", "dosa", "idli", "samosa", "tea", "juice",
                 "swiggy", "zomato", "uber eats", "foodpanda", "dominos", "kfc", "mcdonalds",
                 "hotel", "dhaba", "canteen", "mess", "tiffin", "paratha", "roti", "chapati"
+            ],
+            "Grocery": [
+                "grocery", "groceries", "supermarket", "market", "bazaar", "store", "shop",
+                "reliance fresh", "big bazaar", "more", "dmart", "spencer", "nature basket",
+                # Proteins & Meat
+                "chicken", "mutton", "lamb", "beef", "pork", "fish", "seafood", "prawns", "crab",
+                "egg", "eggs", "paneer", "tofu", "protein",
+                # Fruits
+                "apple", "banana", "orange", "mango", "grapes", "strawberry", "watermelon", "pineapple",
+                "papaya", "guava", "kiwi", "pomegranate", "lemon", "lime", "coconut", "dates",
+                # Vegetables
+                "potato", "onion", "tomato", "carrot", "cabbage", "spinach", "broccoli", "cauliflower",
+                "peas", "beans", "corn", "cucumber", "pepper", "chilli", "ginger", "garlic",
+                # Grains & Staples
+                "wheat", "flour", "oats", "quinoa", "barley", "pulses", "lentils", "chickpeas",
+                # Dairy & Alternatives
+                "yogurt", "curd", "cheese", "butter", "cream", "ghee", "almond milk", "soy milk",
+                # Household items often bought at grocery stores
+                "detergent", "soap", "shampoo", "toothpaste", "tissue", "toilet paper", "oil", "salt", "sugar", "spices"
             ],
             "Transport": [
                 "transport", "uber", "ola", "taxi", "cab", "bus", "train", "metro", "auto",
@@ -213,10 +232,11 @@ class ExpenseCategorizer:
 
             Expense note: "{note}"
             
-            Available categories: Food, Transport, Entertainment, Shopping, Healthcare, Utilities, Education, Other
+            Available categories: Food, Transport, Entertainment, Shopping, Healthcare, Utilities, Education, Other, Grocery
             
-            Consider Indian context:
-            - Swiggy, Zomato = Food
+            Consider Indian context and category distinctions:
+            - Swiggy, Zomato, restaurants = Food
+            - Raw ingredients, fruits, vegetables, supermarket = Grocery  
             - Ola, Uber, BMTC = Transport  
             - Netflix, BookMyShow = Entertainment
             - Amazon, Flipkart = Shopping
@@ -227,8 +247,8 @@ class ExpenseCategorizer:
             Category3:Confidence3
             
             Example:
-            Food:85
-            Shopping:10
+            Grocery:85
+            Food:10
             Other:5"""
             
             response = self.anthropic_client.completions.create(
