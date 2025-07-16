@@ -136,14 +136,14 @@ class ExpenseCategorizer:
             Category:"""
             
             response = self.openai_client.chat.completions.create(
-                model="gpt-3.5-turbo",
+                model="o4-mini",
                 messages=[{"role": "user", "content": prompt}],
                 max_tokens=10,
                 temperature=0.1
             )
             
             category = response.choices[0].message.content.strip()
-            
+            print(category)
             # Validate the response is in available categories
             if category in available_categories:
                 return category
