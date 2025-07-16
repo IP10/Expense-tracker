@@ -17,19 +17,29 @@ async def create_expense(expense_data: ExpenseCreate, current_user = Depends(get
         
         # Auto-categorize if no category provided
         category_id = expense_data.category_id
+        print(f"🔍 Expense creation - Initial category_id: {category_id}")
+        print(f"🔍 Expense note: '{expense_data.note}'")
+        
         if not category_id:
+            print(f"🤖 Starting AI categorization for note: '{expense_data.note}'")
             category_id = categorizer.categorize_expense(expense_data.note, user_id)
+            print(f"🎯 AI categorization result: {category_id}")
             
             if not category_id:
+                print("⚠️ AI categorization failed, falling back to 'Other' category")
                 # Fallback to "Other" category
                 other_cat = supabase.table('categories').select('id').eq('user_id', user_id).eq('name', 'Other').execute()
                 if other_cat.data:
                     category_id = other_cat.data[0]['id']
+                    print(f"✅ Using 'Other' category: {category_id}")
                 else:
+                    print("❌ No 'Other' category found!")
                     raise HTTPException(
                         status_code=status.HTTP_400_BAD_REQUEST,
                         detail="No suitable category found and no Other category exists"
                     )
+            else:
+                print(f"✅ AI categorization successful: {category_id}")
         
         # Verify category belongs to user
         cat_result = supabase.table('categories').select('*').eq('id', category_id).eq('user_id', user_id).execute()
@@ -59,7 +69,7 @@ async def create_expense(expense_data: ExpenseCreate, current_user = Depends(get
         expense = result.data[0]
         category = cat_result.data[0]
         
-        return {
+        response_data = {
             "id": expense['id'],
             "user_id": expense['user_id'],
             "amount": Decimal(str(expense['amount'])),
@@ -70,6 +80,15 @@ async def create_expense(expense_data: ExpenseCreate, current_user = Depends(get
             "created_at": datetime.fromisoformat(expense['created_at'].replace('Z', '+00:00')),
             "updated_at": datetime.fromisoformat(expense['updated_at'].replace('Z', '+00:00'))
         }
+        
+        print(f"📤 Expense created successfully:")
+        print(f"   - ID: {response_data['id']}")
+        print(f"   - Note: '{response_data['note']}'")
+        print(f"   - Category ID: {response_data['category_id']}")
+        print(f"   - Category Name: {response_data['category_name']}")
+        print(f"   - Amount: {response_data['amount']}")
+        
+        return response_data
         
     except HTTPException:
         raise
@@ -300,7 +319,9 @@ async def preview_categorization(note: str, current_user = Depends(get_current_u
     """Preview expense categorization for a given note using Claude AI"""
     try:
         user_id = current_user['id']
+        print(f"🔍 Preview categorization request for note: '{note}' from user: {user_id}")
         category_id = categorizer.categorize_expense(note, user_id)
+        print(f"🎯 Preview categorization result: {category_id}")
         
         if category_id:
             cat_result = supabase.table('categories').select('name, emoji').eq('id', category_id).execute()

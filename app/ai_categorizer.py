@@ -88,9 +88,17 @@ class ExpenseCategorizer:
             category_names = list(user_categories.keys())
             
             # Try OpenAI categorization first
+            print(f"🤖 Attempting OpenAI categorization for: '{note}'")
+            print(f"📋 Available categories: {category_names}")
             openai_category = self._categorize_with_openai(note, category_names)
+            print(f"🎯 OpenAI returned category: '{openai_category}'")
+            
             if openai_category and openai_category in user_categories:
-                return user_categories[openai_category]
+                category_id = user_categories[openai_category]
+                print(f"✅ OpenAI categorization successful: '{openai_category}' -> ID: {category_id}")
+                return category_id
+            else:
+                print(f"❌ OpenAI category '{openai_category}' not found in user categories: {list(user_categories.keys())}")
             
             # Fallback to keyword matching
             print(f"OpenAI failed, using keyword fallback for: '{note}'")
@@ -135,23 +143,32 @@ class ExpenseCategorizer:
 
             Category:"""
             
+            print(f"🔤 Sending to OpenAI with prompt: {prompt[:200]}...")
             response = self.openai_client.chat.completions.create(
-                model="o4-mini",
-                messages=[{"role": "user", "content": prompt}]
+                model="gpt-4o-mini",
+                messages=[{"role": "user", "content": prompt}],
+                max_tokens=10,
+                temperature=0.1
             )
             
             category = response.choices[0].message.content.strip()
-            print(category)
+            print(f"🤖 OpenAI raw response: '{category}'")
+            print(f"🔍 Checking if '{category}' is in available categories: {available_categories}")
+            
             # Validate the response is in available categories
             if category in available_categories:
+                print(f"✅ Exact match found: '{category}'")
                 return category
             
             # Try case-insensitive matching
             category_lower = category.lower()
+            print(f"🔄 Trying case-insensitive matching for: '{category_lower}'")
             for cat in available_categories:
                 if cat.lower() == category_lower:
+                    print(f"✅ Case-insensitive match found: '{category}' -> '{cat}'")
                     return cat
             
+            print(f"❌ No match found for '{category}' in available categories")
             return None
             
         except Exception as e:
