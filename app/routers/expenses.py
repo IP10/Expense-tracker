@@ -74,6 +74,7 @@ async def create_expense(expense_data: ExpenseCreate, current_user = Depends(get
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Create expense error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create expense: {str(e)}"
@@ -131,6 +132,7 @@ async def get_expenses(
         return expenses
         
     except Exception as e:
+        print(f"❌ Get expenses error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch expenses: {str(e)}"
@@ -169,6 +171,7 @@ async def get_expense(expense_id: str, current_user = Depends(get_current_user))
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Get expense error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch expense: {str(e)}"
@@ -254,6 +257,7 @@ async def update_expense(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Update expense error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update expense: {str(e)}"
@@ -285,6 +289,7 @@ async def delete_expense(expense_id: str, current_user = Depends(get_current_use
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Delete expense error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete expense: {str(e)}"
@@ -318,6 +323,7 @@ async def preview_categorization(note: str, current_user = Depends(get_current_u
         }
         
     except Exception as e:
+        print(f"❌ Preview categorization error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to preview categorization: {str(e)}"

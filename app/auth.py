@@ -50,16 +50,19 @@ async def verify_token(credentials: HTTPAuthorizationCredentials = Depends(secur
         user_id: str = payload.get("sub")
         if user_id is None:
             raise credentials_exception
-    except PyJWTError:
+    except PyJWTError as e:
+        print(f"❌ JWT verification error: {str(e)}")
         raise credentials_exception
     
     # Verify user exists
     try:
         result = supabase.table('users').select('*').eq('id', user_id).execute()
         if not result.data:
+            print(f"❌ User not found in database: {user_id}")
             raise credentials_exception
         return result.data[0]
-    except Exception:
+    except Exception as e:
+        print(f"❌ Database error in user verification: {str(e)}")
         raise credentials_exception
 
 async def get_current_user(user = Depends(verify_token)):

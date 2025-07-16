@@ -53,6 +53,7 @@ async def register(user_data: UserRegister):
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Registration error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Registration failed: {str(e)}"
@@ -94,6 +95,7 @@ async def login(user_credentials: UserLogin):
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Login error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Login failed: {str(e)}"
@@ -138,12 +140,14 @@ async def refresh_token(refresh_token: str):
             "expires_in": settings.ACCESS_TOKEN_EXPIRE_MINUTES * 60
         }
         
-    except PyJWTError:
+    except PyJWTError as e:
+        print(f"❌ JWT error in token refresh: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_401_UNAUTHORIZED,
             detail="Invalid refresh token"
         )
     except Exception as e:
+        print(f"❌ Token refresh error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Token refresh failed: {str(e)}"
@@ -152,13 +156,20 @@ async def refresh_token(refresh_token: str):
 @router.get("/me", response_model=User)
 async def get_current_user_info(current_user = Depends(get_current_user)):
     """Get current user information"""
-    return {
-        "id": current_user['id'],
-        "email": current_user['email'],
-        "full_name": current_user['full_name'],
-        "created_at": current_user['created_at'],
-        "updated_at": current_user['updated_at']
-    }
+    try:
+        return {
+            "id": current_user['id'],
+            "email": current_user['email'],
+            "full_name": current_user['full_name'],
+            "created_at": current_user['created_at'],
+            "updated_at": current_user['updated_at']
+        }
+    except Exception as e:
+        print(f"❌ Get current user error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Failed to get user information: {str(e)}"
+        )
 
 async def create_user_categories(user_id: str):
     """Create default categories for new user"""

@@ -15,7 +15,10 @@ app = FastAPI(
 
 @app.on_event("startup")
 async def startup_event():
-    await init_db()
+    try:
+        await init_db()
+    except Exception as e:
+        print(f"❌ Startup error: {str(e)}")
 
 app.add_middleware(
     CORSMiddleware,
@@ -32,11 +35,25 @@ app.include_router(categories.router, prefix="/api/categories", tags=["Categorie
 
 @app.get("/")
 async def root():
-    return {"message": "Expense Tracker API is running!", "version": "1.0.0"}
+    try:
+        return {"message": "Expense Tracker API is running!", "version": "1.0.0"}
+    except Exception as e:
+        print(f"❌ Root endpoint error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Root endpoint failed: {str(e)}"
+        )
 
 @app.get("/health")
 async def health_check():
-    return {"status": "healthy", "message": "API is operational"}
+    try:
+        return {"status": "healthy", "message": "API is operational"}
+    except Exception as e:
+        print(f"❌ Health check error: {str(e)}")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Health check failed: {str(e)}"
+        )
 
 if __name__ == "__main__":
     uvicorn.run(app, host="0.0.0.0", port=10000)

@@ -22,6 +22,7 @@ async def generate_report(report_request: ReportRequest, current_user = Depends(
         )
         
     except Exception as e:
+        print(f"❌ Generate report error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate report: {str(e)}"
@@ -39,6 +40,7 @@ async def get_this_month_report(current_user = Depends(get_current_user)):
         return await _generate_report_data(user_id, start_date, end_date)
         
     except Exception as e:
+        print(f"❌ This month report error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate this month report: {str(e)}"
@@ -65,6 +67,7 @@ async def get_last_month_report(current_user = Depends(get_current_user)):
         return await _generate_report_data(user_id, start_date, end_date)
         
     except Exception as e:
+        print(f"❌ Last month report error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate last month report: {str(e)}"
@@ -95,6 +98,7 @@ async def get_last_n_months_report(months: int, current_user = Depends(get_curre
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Last N months report error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate last {months} months report: {str(e)}"
@@ -153,6 +157,7 @@ async def get_monthly_trend(
         return trends
         
     except Exception as e:
+        print(f"❌ Monthly trend error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate monthly trend: {str(e)}"
@@ -232,6 +237,7 @@ async def get_expense_summary(current_user = Depends(get_current_user)):
         }
         
     except Exception as e:
+        print(f"❌ Summary report error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to generate summary: {str(e)}"

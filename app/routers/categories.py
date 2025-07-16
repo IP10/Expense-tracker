@@ -29,6 +29,7 @@ async def get_categories(current_user = Depends(get_current_user)):
         return categories
         
     except Exception as e:
+        print(f"❌ Get categories error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to fetch categories: {str(e)}"
@@ -79,6 +80,7 @@ async def create_category(category_data: CategoryCreate, current_user = Depends(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Create category error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to create category: {str(e)}"
@@ -151,6 +153,7 @@ async def update_category(
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Update category error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to update category: {str(e)}"
@@ -207,6 +210,7 @@ async def delete_category(category_id: str, current_user = Depends(get_current_u
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Delete category error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to delete category: {str(e)}"
@@ -234,6 +238,7 @@ async def get_category_expenses_count(category_id: str, current_user = Depends(g
     except HTTPException:
         raise
     except Exception as e:
+        print(f"❌ Get expenses count error: {str(e)}")
         raise HTTPException(
             status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
             detail=f"Failed to get expenses count: {str(e)}"
