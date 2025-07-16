@@ -10,9 +10,13 @@ from app.ai_categorizer import categorizer
 router = APIRouter()
 
 @router.post("/", response_model=Expense, status_code=status.HTTP_201_CREATED)
-async def create_expense(expense_data: ExpenseCreate, current_user = Depends(get_current_user)):
+async def create_expense(request: Request, expense_data: ExpenseCreate, current_user = Depends(get_current_user)):
     """Create a new expense with AI categorization"""
     try:
+        # Log raw request body first
+        body = await request.body()
+        print(f"🔍 Raw request body: {body.decode()}")
+        
         user_id = current_user['id']
         
         print(f"💰 Backend received expense data:")
@@ -63,7 +67,7 @@ async def create_expense(expense_data: ExpenseCreate, current_user = Depends(get
             "date": (expense_data.date or date.today()).isoformat(),
             "category_id": category_id
         }
-        
+        print(expense_dict)
         result = supabase.table('expenses').insert(expense_dict).execute()
         
         if not result.data:
