@@ -306,6 +306,7 @@ async def preview_categorization(note: str, current_user = Depends(get_current_u
             cat_result = supabase.table('categories').select('name, emoji').eq('id', category_id).execute()
             if cat_result.data:
                 category = cat_result.data[0]
+                print(f"🔍 Preview categorization: {category['name']} ({category_id})")
                 return {
                     "category_id": category_id,
                     "category_name": category['name'],
