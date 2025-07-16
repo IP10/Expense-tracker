@@ -1,12 +1,12 @@
 import re
 from typing import Dict, List, Optional
-from anthropic import Anthropic
+from openai import OpenAI
 from app.database import supabase
 from app.config import settings
 
 class ExpenseCategorizer:
     def __init__(self):
-        self.anthropic_client = Anthropic(api_key=settings.ANTHROPIC_API_KEY)
+        self.openai_client = OpenAI(api_key=settings.ANTHROPIC_API_KEY)
         
         self.category_keywords = {
             "Food": [
@@ -87,13 +87,13 @@ class ExpenseCategorizer:
             user_categories = {cat['name']: cat['id'] for cat in categories_result.data}
             category_names = list(user_categories.keys())
             
-            # Try Claude AI categorization first
-            claude_category = self._categorize_with_claude(note, category_names)
-            if claude_category and claude_category in user_categories:
-                return user_categories[claude_category]
+            # Try OpenAI categorization first
+            openai_category = self._categorize_with_openai(note, category_names)
+            if openai_category and openai_category in user_categories:
+                return user_categories[openai_category]
             
             # Fallback to keyword matching
-            print(f"Claude failed, using keyword fallback for: '{note}'")
+            print(f"OpenAI failed, using keyword fallback for: '{note}'")
             fallback_category = self._categorize_with_keywords(note, user_categories)
             print(f"Keyword fallback result: {fallback_category}")
             return fallback_category
@@ -113,9 +113,9 @@ class ExpenseCategorizer:
                 print(f"Fallback categorization also failed: {fallback_error}")
             return None
     
-    def _categorize_with_claude(self, note: str, available_categories: List[str]) -> Optional[str]:
+    def _categorize_with_openai(self, note: str, available_categories: List[str]) -> Optional[str]:
         """
-        Use Claude Sonnet to categorize the expense
+        Use OpenAI to categorize the expense
         """
         try:
             categories_str = ", ".join(available_categories)
@@ -128,19 +128,21 @@ class ExpenseCategorizer:
             Rules:
             1. Choose ONLY from the available categories
             2. Consider Indian context (swiggy=food, ola=transport, etc.)
-            3. If unclear, prefer "Other" if available
-            4. Respond with just the category name, nothing else
+            3. Consider: raw ingredients like chicken, fruits, vegetables = Grocery
+            4. Consider: prepared meals, restaurant food = Food
+            5. If unclear, prefer "Other" if available
+            6. Respond with just the category name, nothing else
 
             Category:"""
             
-            response = self.anthropic_client.messages.create(
-                model="claude-3-sonnet-20240229",
+            response = self.openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
                 max_tokens=10,
-                temperature=0.1,
-                messages=[{"role": "user", "content": prompt}]
+                temperature=0.1
             )
             
-            category = response.content[0].text.strip()
+            category = response.choices[0].message.content.strip()
             
             # Validate the response is in available categories
             if category in available_categories:
@@ -155,7 +157,7 @@ class ExpenseCategorizer:
             return None
             
         except Exception as e:
-            print(f"Claude categorization failed: {e}")
+            print(f"OpenAI categorization failed: {e}")
             # Log the specific error for debugging
             print(f"Error details - Note: '{note}', Available categories: {available_categories}")
             return None
@@ -240,8 +242,8 @@ class ExpenseCategorizer:
         sorted_categories = sorted(category_scores.items(), key=lambda x: x[1], reverse=True)
         return [{"name": cat, "confidence": round(score * 100, 1)} for cat, score in sorted_categories[:3]]
     
-    def get_category_suggestions_with_claude(self, note: str) -> List[Dict[str, str]]:
-        """Get AI-powered category suggestions with confidence scores using Claude"""
+    def get_category_suggestions_with_openai(self, note: str) -> List[Dict[str, str]]:
+        """Get AI-powered category suggestions with confidence scores using OpenAI"""
         try:
             prompt = f"""Analyze this expense note and suggest the top 3 most likely categories with confidence scores.
 
@@ -266,15 +268,15 @@ class ExpenseCategorizer:
             Food:10
             Other:5"""
             
-            response = self.anthropic_client.messages.create(
-                model="claude-3-sonnet-20240229",
+            response = self.openai_client.chat.completions.create(
+                model="gpt-3.5-turbo",
+                messages=[{"role": "user", "content": prompt}],
                 max_tokens=50,
-                temperature=0.2,
-                messages=[{"role": "user", "content": prompt}]
+                temperature=0.2
             )
             
             suggestions = []
-            lines = response.content[0].text.strip().split('\n')
+            lines = response.choices[0].message.content.strip().split('\n')
             
             for line in lines[:3]:  # Top 3 only
                 if ':' in line:
@@ -293,7 +295,7 @@ class ExpenseCategorizer:
             return suggestions if suggestions else self.get_category_suggestions(note)
             
         except Exception as e:
-            print(f"Claude suggestions failed: {e}")
+            print(f"OpenAI suggestions failed: {e}")
             print(f"Suggestions error details - Note: '{note}'")
             # Fallback to keyword-based suggestions
             return self.get_category_suggestions(note)
